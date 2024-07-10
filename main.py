@@ -10,11 +10,32 @@ from dotenv import load_dotenv
 
 from helper import PostModel, generate_public_code, is_valid_code, generate_private_code, get_meower_token
 
+load_dotenv()
+
 app = FastAPI()
 
+# Move database connection outside of __main__
+print("Connecting to MongoDB...")
+try:
+    db = pymongo.MongoClient(getenv("MONGODB_URI"))["meowerauth"]
+    db.command("ping")
+    print("Connected to MongoDB!")
+except Exception as e:
+    print(f"Failed to connect to MongoDB! Error: {e}")
+    db = None  # Set db to None if connection fails
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/generate-token")
 async def generate_token(username: str):
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database connection not available")
     if not username:
         raise HTTPException(status_code=400, detail="Username not included")
     if len(username) < 1 or len(username) > 20:
@@ -30,6 +51,8 @@ async def generate_token(username: str):
 
 @app.post("/verify-token")
 async def verify_token(privateCode: str):
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database connection not available")
     supposed_token = db.tokens.find_one({"privateCode": privateCode})
     if not supposed_token:
         raise HTTPException(status_code=401, detail="Invalid auth code")
@@ -62,20 +85,4 @@ async def verify_token(privateCode: str):
     return {"valid": True, "username": username}
 
 if __name__ == "__main__":
-    load_dotenv()
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=False,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    print("Connecting to MongoDB...")
-    try:
-        db = pymongo.MongoClient(getenv("MONGODB_URI"))["meowerauth"]
-        db.command("ping")
-    except Exception as e:
-        exit(f"Failed to connect to MongoDB! Error: {e}")
-    print("Connected to MongoDB!")
-
     uvicorn.run(app)
