@@ -63,14 +63,6 @@ async def verify_token(privateCode: str):
 
 if __name__ == "__main__":
     load_dotenv()
-    print("Connecting to MongoDB...")
-    try:
-        db = pymongo.MongoClient(getenv("MONGODB_URI"))["meowerauth"]
-        db.command("ping")
-    except Exception as e:
-        exit(f"Failed to connect to MongoDB! Error: {e}")
-    print("Connected to MongoDB!")
-    
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -78,6 +70,12 @@ if __name__ == "__main__":
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
+    print("Connecting to MongoDB...")
+    try:
+        db = pymongo.MongoClient(getenv("MONGODB_URI"))["meowerauth"]
+        db.command("ping")
+    except Exception as e:
+        exit(f"Failed to connect to MongoDB! Error: {e}")
+    print("Connected to MongoDB!")
 
     uvicorn.run(app)
