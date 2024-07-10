@@ -3,6 +3,7 @@ from typing import List
 import pymongo
 import requests as r
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from os import getenv
 from dotenv import load_dotenv
@@ -70,4 +71,13 @@ if __name__ == "__main__":
         exit(f"Failed to connect to MongoDB! Error: {e}")
     print("Connected to MongoDB!")
     
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+
     uvicorn.run(app)
